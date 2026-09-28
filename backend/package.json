@@ -1,0 +1,31 @@
+{
+  "name": "background-job-system-v1",
+  "private": true,
+  "scripts": {
+    "dev:api": "tsx src/server.ts",
+    "dev:worker": "tsx src/worker.ts",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\"",
+    "build": "tsc",
+    "test": "tsx --test src/tests/queue.test.ts",
+    "start:api": "node dist/server.js",
+    "start:worker": "node dist/worker.js",
+    "db:reset": "tsx src/db/reset.db.ts",
+    "db:init": "tsx -e \"import 'dotenv/config'; import { initializeDatabase, pool } from './src/db/database'; initializeDatabase().finally(() => pool.end())\""
+  },
+  "dependencies": {
+    "cors": "latest",
+    "dotenv": "latest",
+    "express": "latest",
+    "pg": "^8.23.0",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/cors": "latest",
+    "@types/express": "latest",
+    "@types/node": "latest",
+    "@types/pg": "^8.23.1",
+    "concurrently": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}
