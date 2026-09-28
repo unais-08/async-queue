@@ -28,7 +28,7 @@ The project focuses on making the core mechanics of a production-style backgroun
 
 The API and worker run as separate processes, while PostgreSQL acts as the **single source of truth** for job state.
 
-![Architecture](docs/architecture.png)
+![Architecture](arch-diagram/architecture.png)
 
 The system consists of three primary components:
 
@@ -77,7 +77,7 @@ If a worker crashes while processing a job, its lease eventually expires. The jo
 
 PostgreSQL stores both the current state of each job and its execution history required for recovery and operational handling.
 
-![Database design](docs/db_design.png)
+![Database design](arch-diagram/db_design.png)
 
 ---
 
