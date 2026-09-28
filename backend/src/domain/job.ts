@@ -1,4 +1,4 @@
-export type JobStatus = 'PENDING' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+export type JobStatus = 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
 
 export interface Job {
   id: string;
@@ -18,7 +18,7 @@ export interface Job {
   updatedAt: Date;
 }
 
-export type JobHandler = (payload: unknown) => Promise<void>;
+export type JobHandler<TPayload = unknown> = (payload: TPayload) => Promise<void>;
 
 export type JobFilters = {
   status?: string;

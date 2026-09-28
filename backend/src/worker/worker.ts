@@ -6,7 +6,7 @@ import {
   recoverStaleJobs,
   renewJobLease,
 } from '../application/job.service';
-import { handlers } from '../handlers';
+import { getHandler } from '../handlers';
 import { logger } from '../utils/logger';
 
 const HEARTBEAT_MS = 10_000;
@@ -75,7 +75,7 @@ async function startHeartbeat(job: Job) {
 }
 
 export async function executeJob(job: Job) {
-  const handler = handlers[job.type];
+  const handler = getHandler(job.type);
 
   if (!handler) {
     throw new NonRetryableJobError(
@@ -141,7 +141,7 @@ async function handleJobError(
     return;
   }
 
-  if (updated.status === 'PENDING') {
+  if (updated.status === 'QUEUED') {
     logger.info('Job retry scheduled', {
       jobId: job.id,
       attempt: job.attempts,

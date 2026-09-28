@@ -1,4 +1,4 @@
-import { query } from './client';
+import { query, withTransaction } from './client';
 
 export async function initializeDatabase() {
   await query(`
@@ -6,8 +6,8 @@ export async function initializeDatabase() {
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
       payload JSONB NOT NULL,
-      status TEXT NOT NULL DEFAULT 'PENDING'
-        CHECK (status IN ('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED')),
+      status TEXT NOT NULL DEFAULT 'QUEUED'
+        CHECK (status IN ('QUEUED', 'PROCESSING', 'COMPLETED', 'FAILED')),
       attempts INTEGER NOT NULL DEFAULT 0,
       "maxAttempts" INTEGER NOT NULL DEFAULT 3,
       error TEXT,

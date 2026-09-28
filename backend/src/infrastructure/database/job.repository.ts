@@ -32,7 +32,7 @@ export async function claimNextJob() {
     `WITH next_job AS (
        SELECT id
        FROM "Job"
-       WHERE status = 'PENDING'
+       WHERE status = 'QUEUED'
          AND ("nextRunAt" IS NULL OR "nextRunAt" <= NOW())
        ORDER BY "createdAt" ASC
        FOR UPDATE SKIP LOCKED
@@ -75,7 +75,7 @@ export async function recoverStaleJobs() {
     const result = await client.query<Job>(
       `UPDATE "Job"
        SET status = CASE
-             WHEN attempts < "maxAttempts" THEN 'PENDING'
+             WHEN attempts < "maxAttempts" THEN 'QUEUED'
              ELSE 'FAILED'
            END,
            "startedAt" = NULL,
@@ -146,7 +146,7 @@ export async function failOrRetryJob(
     const result = await client.query<Job>(
       `UPDATE "Job"
        SET status = CASE
-             WHEN $4 AND attempts < "maxAttempts" THEN 'PENDING'
+             WHEN $4 AND attempts < "maxAttempts" THEN 'QUEUED'
              ELSE 'FAILED'
            END,
            error = $3,
@@ -228,7 +228,7 @@ export async function listJobs(filters: JobFilters): Promise<JobPage> {
 export async function retryFailedJob(id: string) {
   const result = await query<Job>(
     `UPDATE "Job"
-     SET status = 'PENDING',
+     SET status = 'QUEUED',
          attempts = 0,
          error = NULL,
          "failedAt" = NULL,

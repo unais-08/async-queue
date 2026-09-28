@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import '../examples/register-handlers';
 
 import { initializeDatabase } from '../infrastructure/database/schema';
 import { pool } from '../infrastructure/database/client';

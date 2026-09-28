@@ -46,6 +46,16 @@ export function JobTable({
               key={job.id}
               className={selectedId === job.id ? "selected-row" : ""}
               onClick={() => onSelect(job)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelect(job);
+                }
+              }}
+              tabIndex={0}
+              aria-selected={selectedId === job.id}
+              role="button"
+              title={`Inspect ${job.type} job`}
             >
               <td className="mono">{shortId(job.id)}</td>
               <td className="job-type">{job.type}</td>

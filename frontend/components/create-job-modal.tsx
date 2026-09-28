@@ -7,8 +7,8 @@ export function CreateJobModal({ onClose, onCreated }: {
   onClose: () => void;
   onCreated: (jobId: string) => void;
 }) {
-  const [type, setType] = useState("SLOW_TASK");
-  const [payload, setPayload] = useState('{"durationMs": 5000}');
+  const [type, setType] = useState("generate_pdf");
+  const [payload, setPayload] = useState('{"text": "Hello World"}');
   const [maxAttempts, setMaxAttempts] = useState("3");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -46,11 +46,11 @@ export function CreateJobModal({ onClose, onCreated }: {
 
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
-      <form className="modal" onSubmit={submit} onMouseDown={(event) => event.stopPropagation()}>
+      <form className="modal" aria-labelledby="create-job-title" onSubmit={submit} onMouseDown={(event) => event.stopPropagation()}>
         <div className="modal-header">
           <div>
             <span className="eyebrow">New job</span>
-            <h2>Create background job</h2>
+            <h2 id="create-job-title">Create background job</h2>
           </div>
           <button type="button" className="icon-button" onClick={onClose}>×</button>
         </div>
@@ -58,11 +58,13 @@ export function CreateJobModal({ onClose, onCreated }: {
         <div className="form-body">
           <label>
             Job type
-            <input value={type} onChange={(event) => setType(event.target.value)} placeholder="SEND_EMAIL" required />
+            <input value={type} onChange={(event) => setType(event.target.value)} placeholder="generate_pdf" required />
+            <span className="helper-text">The worker dispatches this name to a registered application handler.</span>
           </label>
           <label>
             Payload
             <textarea value={payload} onChange={(event) => setPayload(event.target.value)} rows={8} />
+            <span className="helper-text">Example: {`{ "text": "Hello World" }`}</span>
           </label>
           <label>
             Max attempts

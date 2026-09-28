@@ -123,7 +123,7 @@ export async function retryFailedJob(jobId: string) {
 
     const updatedJobResult = await client.query<Job>(
       `UPDATE "Job"
-       SET status = 'PENDING',
+       SET status = 'QUEUED',
            attempts = 0,
            error = NULL,
            "failedAt" = NULL,

@@ -38,11 +38,19 @@ The system consists of three primary components:
 
 ---
 
+```text
+External application -- POST /jobs --> Queue API --> PostgreSQL queue
+                                               Worker
+                                                 |
+                                   registered application handler
+                                                 |
+                                           Actual work
+```
 ## Job Lifecycle
 
 ```text
                     ┌───────────────┐
-                    │    PENDING    │
+                    │    QUEUED    │
                     └───────┬───────┘
                             │
                             ▼
@@ -63,7 +71,7 @@ The system consists of three primary components:
                      Retry available       Attempts exhausted
                            │                     │
                            ▼                     ▼
-                      PENDING                 FAILED
+                      QUEUED                 FAILED
                                                  │
                                                  ▼
                                            FailedJob
@@ -120,7 +128,7 @@ This allows abandoned jobs to recover without requiring manual database interven
 
 ### Retries
 
-Retryable failures return the job to `PENDING` while attempts remain.
+Retryable failures return the job to `QUEUED` while attempts remain.
 
 Retry delays use exponential backoff with an upper bound to avoid repeatedly retrying failing work too aggressively.
 
@@ -133,7 +141,7 @@ When a job exhausts its configured attempts:
 3. The job becomes visible through the admin failed-job endpoint.
 4. An administrator can manually retry it.
 
-Manual retry returns the job to the normal `PENDING` execution flow.
+Manual retry returns the job to the normal `QUEUED` execution flow.
 
 A successful retry resolves the corresponding failed-job record.
 
@@ -158,19 +166,21 @@ This is an intentional design decision and an important property of the system.
 
 ---
 
-## Supported Job Types
+## Application Handlers
 
-| Type              | Purpose                                  |
-| ----------------- | ---------------------------------------- |
-| `SLOW_TASK`       | Simulates a long-running job             |
-| `SEND_EMAIL`      | Simulates email processing               |
-| `GENERATE_REPORT` | Simulates report generation              |
-| `FAIL_TASK`       | Demonstrates failures and retry behavior |
+The queue core has no built-in business job types. This repository includes one example application handler, `generate_pdf`, registered by `backend/src/examples/register-handlers.ts`. It creates a PDF in `backend/generated-pdfs/` (or the directory set by `PDF_OUTPUT_DIR`).
 
-The queue mechanism is independent of individual handlers. New job types can be added by implementing additional handlers without changing the core queue processing logic.
+An application adds its own handler and registers it when its worker starts:
 
----
+```ts
+import { register } from './handlers';
 
+register('send_email', async payload => {
+  // Application-owned email implementation goes here.
+});
+```
+
+The worker looks up the registered handler by `job.type` and passes it the stored `job.payload`. Unknown job types fail without retries so configuration errors become visible in the failed-job list.
 ## API
 
 | Method | Endpoint             | Description                 |
@@ -191,10 +201,12 @@ The key is configured through `ADMIN_API_KEY`.
 ```bash
 curl -X POST http://localhost:4000/jobs \
   -H "Content-Type: application/json" \
-  -d '{"type":"SLOW_TASK","payload":{"durationMs":5000}}'
+  -d '{"type":"generate_pdf","payload":{"text":"Hello World"}}'
 ```
 
 ---
+
+The response contains a `jobId` and `QUEUED` status. Check progress with `GET /jobs/:id`. Failed jobs can be manually retried with `POST /jobs/:id/retry` using the configured `x-admin-key` header.
 
 ## Getting Started
 
@@ -325,7 +337,8 @@ src/
 ├── domain/                 # Domain models and types
 ├── infrastructure/
 │   └── database/           # PostgreSQL client, schema, repositories
-├── handlers/               # Job-specific handlers
+├── handlers/               # Generic handler registration and lookup
++-- examples/               # Example application-owned PDF handler
 └── worker/                 # Polling, execution, recovery, shutdown
 
 docs/

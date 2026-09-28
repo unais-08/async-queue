@@ -28,6 +28,13 @@ export async function createJob(req: Request, res: Response) {
   });
 }
 
+export async function getJob(req: Request<JobIdParams>, res: Response) {
+  const job = await jobs.findJobById(req.params.id);
+
+  if (!job) return res.status(404).json({ error: 'Job not found' });
+  return res.json(toPublicJob(job));
+}
+
 export async function listJobs(req: Request, res: Response) {
   const status =
     typeof req.query.status === 'string' ? req.query.status : undefined;
@@ -44,16 +51,6 @@ export async function listJobs(req: Request, res: Response) {
       totalPages: Math.ceil(result.total / limit),
     },
   });
-}
-
-export async function getJob(req: Request<JobIdParams>, res: Response) {
-  const job = await jobs.findJobById(req.params.id);
-
-  if (!job) {
-    return res.status(404).json({ error: 'Job not found' });
-  }
-
-  return res.json(toPublicJob(job));
 }
 
 export async function retryJob(req: Request<JobIdParams>, res: Response) {

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-export type JobStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+export type JobStatus = "QUEUED" | "PROCESSING" | "COMPLETED" | "FAILED";
 
 export type Job = {
   id: string;
@@ -102,7 +102,7 @@ export async function retryJob(id: string, adminKey: string) {
 
 export async function getJobCounts() {
   const statuses: JobStatus[] = [
-    "PENDING",
+    "QUEUED",
     "PROCESSING",
     "COMPLETED",
     "FAILED",
@@ -119,7 +119,7 @@ export async function getJobCounts() {
   );
 
   return {
-    pending: results[0].pagination.total,
+    queued: results[0].pagination.total,
     processing: results[1].pagination.total,
     completed: results[2].pagination.total,
     failed: results[3].pagination.total,
