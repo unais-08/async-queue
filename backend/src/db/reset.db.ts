@@ -10,7 +10,7 @@ async function resetJobs() {
   try {
     await initializeDatabase();
 
-    await pool.query('TRUNCATE TABLE "Job"');
+    await pool.query('TRUNCATE TABLE "FailedJob", "Job" CASCADE');
 
     logger.info('All jobs deleted successfully');
   } catch (error) {
@@ -22,3 +22,4 @@ async function resetJobs() {
 }
 
 resetJobs();
+

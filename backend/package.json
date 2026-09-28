@@ -1,16 +1,14 @@
 {
-  "name": "background-job-system-v1",
-  "private": true,
+  "name": "AsyncQueue",
   "scripts": {
+    "build": "tsc",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\"",
+    "start": "concurrently \"npm run start:api\" \"npm run start:worker\"",
     "dev:api": "tsx src/server.ts",
     "dev:worker": "tsx src/worker.ts",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\"",
-    "build": "tsc",
-    "test": "tsx --test src/tests/queue.test.ts",
     "start:api": "node dist/server.js",
     "start:worker": "node dist/worker.js",
-    "db:reset": "tsx src/db/reset.db.ts",
-    "db:init": "tsx -e \"import 'dotenv/config'; import { initializeDatabase, pool } from './src/db/database'; initializeDatabase().finally(() => pool.end())\""
+    "db:reset": "tsx src/db/reset.db.ts"
   },
   "dependencies": {
     "cors": "latest",
