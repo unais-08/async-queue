@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  createJob,
   getApiError,
   getJob,
   getJobCounts,
@@ -35,6 +36,7 @@ export default function Home() {
   const [failedTotalPages, setFailedTotalPages] = useState(1);
   const [counts, setCounts] = useState({ queued: 0, processing: 0, completed: 0, failed: 0 });
   const [apiOnline, setApiOnline] = useState(false);
+  const [workerConfigured, setWorkerConfigured] = useState(false);
   const [loading, setLoading] = useState(true);
   const [failedLoading, setFailedLoading] = useState(false);
   const [error, setError] = useState("");
@@ -42,6 +44,7 @@ export default function Home() {
   const [showCreate, setShowCreate] = useState(false);
   const [showAdminKey, setShowAdminKey] = useState(false);
   const [retrying, setRetrying] = useState(false);
+  const [demoSubmitting, setDemoSubmitting] = useState(false);
 
   useEffect(() => {
     setAdminKey(sessionStorage.getItem("async-queue-admin-key") ?? "");
@@ -73,10 +76,12 @@ export default function Home() {
 
   const refreshApiHealth = useCallback(async () => {
     try {
-      await healthCheck();
+      const health = await healthCheck();
       setApiOnline(true);
+      setWorkerConfigured(health.workerConfigured);
     } catch {
       setApiOnline(false);
+      setWorkerConfigured(false);
     }
   }, []);
 
@@ -167,6 +172,19 @@ export default function Home() {
     }
   }
 
+  async function runPdfDemo() {
+    setDemoSubmitting(true);
+    setError("");
+    try {
+      const created = await createJob({ type: "generate_pdf", payload: { text: "Hello from Async Queue" } });
+      await handleCreated(created.jobId);
+    } catch (err) {
+      setError(getApiError(err, "Could not submit the PDF demo job."));
+    } finally {
+      setDemoSubmitting(false);
+    }
+  }
+
   const filteredJobs = jobs.filter((job) => {
     const query = search.trim().toLowerCase();
     return !query || job.id.toLowerCase().includes(query) || job.type.toLowerCase().includes(query);
@@ -182,7 +200,7 @@ export default function Home() {
         <div className="sidebar-label">Workspace</div>
         <nav className="sidebar-nav" aria-label="Main navigation">
           <button className={view === "jobs" ? "nav-item active" : "nav-item"} onClick={() => setView("jobs")}>
-            <span aria-hidden="true">▦</span> Jobs <b>{counts.queued + counts.processing}</b>
+            <span aria-hidden="true">J</span> Jobs <b>{counts.queued + counts.processing}</b>
           </button>
           <button className={view === "failed" ? "nav-item active" : "nav-item"} onClick={() => setView("failed")}>
             <span aria-hidden="true">!</span> Failed jobs {counts.failed > 0 && <b>{counts.failed}</b>}
@@ -190,7 +208,7 @@ export default function Home() {
         </nav>
         <div className="sidebar-bottom">
           <div className="sidebar-note"><strong>Generic queue</strong><p>Applications provide handlers. The queue manages delivery, retries, and job state.</p></div>
-          <button className="nav-item" onClick={() => setShowAdminKey(true)}><span aria-hidden="true">⚙</span> Admin access</button>
+          <button className="nav-item" onClick={() => setShowAdminKey(true)}><span aria-hidden="true">A</span> Admin access</button>
         </div>
       </aside>
 
@@ -199,7 +217,10 @@ export default function Home() {
           <div className="connection" aria-live="polite">
             <span className={apiOnline ? "online-dot" : "offline-dot"} />
             {apiOnline ? "API connected" : "API unavailable"}
-            <span className="poll-label">• live updates every 3s</span>
+            <span className={workerConfigured ? "worker-configured" : "worker-missing"}>
+              {!apiOnline ? "Worker status unavailable" : workerConfigured ? "Worker key is set" : "Worker key missing"}
+            </span>
+            <span className="poll-label">Refreshes every 3 seconds</span>
           </div>
           <button className="user-button" aria-label="Configure admin access" onClick={() => setShowAdminKey(true)}>{adminKey ? "A" : "?"}</button>
         </header>
@@ -207,13 +228,14 @@ export default function Home() {
         <main className="content">
           <div className="page-title">
             <div><span className="eyebrow">Queue operations</span><h1>{view === "jobs" ? "Background jobs" : "Failed jobs"}</h1><p>{view === "jobs" ? "Submit work, follow its progress, and inspect each attempt." : "Review dead-letter jobs and send them back through the queue."}</p></div>
-            {view === "jobs" && <button className="button button-primary" onClick={() => setShowCreate(true)}><span aria-hidden="true">＋</span> Submit a job</button>}
+            {view === "jobs" && <button className="button button-primary" onClick={() => setShowCreate(true)}><span aria-hidden="true">+</span> Submit a job</button>}
           </div>
 
           {view === "jobs" && <section className="demo-banner" aria-label="Example queue flow">
-            <div className="demo-copy"><span className="demo-kicker">Try the integration</span><h2>Generate a PDF in the background</h2><p>Submit a JSON payload. The queue stores it, a worker claims it, and the registered application handler creates the PDF.</p><button className="demo-link" onClick={() => setShowCreate(true)}>Open the job form <span aria-hidden="true">→</span></button></div>
+            <div className="demo-copy"><span className="demo-kicker">External app example</span><h2>Generate a PDF in the background</h2><p>The separate PDF app submits a job. Its worker claims it and runs its registered handler.</p><div className="demo-actions"><button className="button button-primary" disabled={!apiOnline || demoSubmitting} onClick={() => void runPdfDemo()}>{demoSubmitting ? "Submitting..." : "Run PDF demo"}</button><button className="demo-link" onClick={() => setShowCreate(true)}>Create a custom job</button></div></div>
             <div className="flow-steps"><div className="flow-step"><span>01</span><strong>Submit</strong><code>POST /jobs</code></div><i aria-hidden="true" /><div className="flow-step"><span>02</span><strong>Queue + worker</strong><code>type: generate_pdf</code></div><i aria-hidden="true" /><div className="flow-step"><span>03</span><strong>Application handler</strong><code>PDF generated</code></div></div>
             <pre className="demo-payload">{"{\n  \"type\": \"generate_pdf\",\n  \"payload\": { \"text\": \"Hello World\" }\n}"}</pre>
+            {apiOnline && !workerConfigured && <div className="worker-warning" role="status"><strong>Worker access is not configured</strong><span>Set WORKER_API_KEY in the queue API environment and restart it. Jobs can be queued, but worker requests will receive a 503.</span></div>}
           </section>}
 
           {error && <div className="alert" role="alert"><span>{error}</span><button onClick={() => setError("")}>Dismiss</button></div>}
@@ -227,17 +249,15 @@ export default function Home() {
             </section>
             <div className="workspace">
               <section className="panel jobs-panel">
-                <div className="panel-toolbar"><div><span className="eyebrow">Queue</span><h2>Recent jobs</h2></div><div className="job-filters"><label className="search-box"><span aria-hidden="true">⌕</span><input aria-label="Search jobs" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search ID or type" /></label><select aria-label="Filter by status" value={status} onChange={(event) => { setStatus(event.target.value as JobStatus | "ALL"); setPage(1); }}>
-                  {statuses.map((item) => <option key={item} value={item}>{item === "ALL" ? "All statuses" : item}</option>)}
-                </select></div></div>
-                {loading ? <div className="loading">Loading jobs…</div> : <JobTable jobs={filteredJobs} selectedId={selectedJob?.id} onSelect={selectJob} />}
+                <div className="panel-toolbar"><div><span className="eyebrow">Queue</span><h2>Recent jobs</h2></div><div className="job-filters"><label className="search-box"><input aria-label="Search jobs" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search ID or type" /></label><select aria-label="Filter by status" value={status} onChange={(event) => { setStatus(event.target.value as JobStatus | "ALL"); setPage(1); }}>{statuses.map((item) => <option key={item} value={item}>{item === "ALL" ? "All statuses" : item}</option>)}</select></div></div>
+                {loading ? <div className="loading">Loading jobs...</div> : <JobTable jobs={filteredJobs} selectedId={selectedJob?.id} onSelect={selectJob} />}
                 <div className="panel-footer"><span>{filteredJobs.length} of {jobs.length} jobs on this page</span><Pagination page={page} totalPages={totalPages} onChange={setPage} /></div>
               </section>
               <JobDetails job={selectedJob} retrying={retrying} onRetry={(job) => { if (!retrying) void handleRetry(job.id); }} />
             </div>
           </> : <section className="panel failed-panel">
             <div className="panel-toolbar"><div><span className="eyebrow">Dead-letter queue</span><h2>Jobs requiring attention</h2></div><span className="failed-count">{counts.failed} open</span></div>
-            {!adminKey ? <div className="empty-state"><strong>Admin access required</strong><p>Configure the admin API key to inspect failed job records and retry them.</p><button className="button button-secondary" onClick={() => setShowAdminKey(true)}>Configure admin access</button></div> : failedLoading ? <div className="loading">Loading failed jobs…</div> : !failedJobs.length ? <div className="empty-state"><strong>No open failed jobs</strong><p>When a job exhausts its attempts, it will appear here.</p></div> : <div className="table-scroll"><table className="jobs-table"><thead><tr><th>Job ID</th><th>Type</th><th>Attempts</th><th>Failed at</th><th /></tr></thead><tbody>{failedJobs.map((job) => <tr key={job.jobId}><td className="mono" title={job.jobId}>{job.jobId.slice(0, 8)}…{job.jobId.slice(-6)}</td><td className="job-type">{job.type}</td><td>{job.attempts}/{job.maxAttempts}</td><td>{job.failedAt ? new Date(job.failedAt).toLocaleString() : "—"}</td><td><button className="button button-secondary" disabled={retrying} onClick={() => void handleRetry(job.jobId)}>{retrying ? "Retrying…" : "Retry job"}</button></td></tr>)}</tbody></table></div>}
+            {!adminKey ? <div className="empty-state"><strong>Admin access required</strong><p>Configure the admin API key to inspect failed job records and retry them.</p><button className="button button-secondary" onClick={() => setShowAdminKey(true)}>Configure admin access</button></div> : failedLoading ? <div className="loading">Loading failed jobs...</div> : !failedJobs.length ? <div className="empty-state"><strong>No open failed jobs</strong><p>When a job exhausts its attempts, it will appear here.</p></div> : <div className="table-scroll"><table className="jobs-table"><thead><tr><th>Job ID</th><th>Type</th><th>Attempts</th><th>Failed at</th><th /></tr></thead><tbody>{failedJobs.map((job) => <tr key={job.jobId}><td className="mono" title={job.jobId}>{job.jobId.slice(0, 8)}...{job.jobId.slice(-6)}</td><td className="job-type">{job.type}</td><td>{job.attempts}/{job.maxAttempts}</td><td>{job.failedAt ? new Date(job.failedAt).toLocaleString() : "..."}</td><td><button className="button button-secondary" disabled={retrying} onClick={() => void handleRetry(job.jobId)}>{retrying ? "Retrying..." : "Retry job"}</button></td></tr>)}</tbody></table></div>}
             <div className="panel-footer"><span>{failedJobs.length} failed jobs on this page</span><Pagination page={failedPage} totalPages={failedTotalPages} onChange={setFailedPage} /></div>
           </section>}
         </main>

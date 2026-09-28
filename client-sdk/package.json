@@ -1,0 +1,23 @@
+{
+  "name": "@async-queue/client",
+  "version": "1.0.0",
+  "description": "Small client and worker SDK for the Async Queue service",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "tsc",
+    "prepack": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}

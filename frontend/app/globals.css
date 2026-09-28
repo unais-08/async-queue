@@ -277,6 +277,13 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .failed-count { padding: 5px 9px; border-radius: 999px; background: var(--danger-soft); color: var(--danger); font-size: 10px; font-weight: 700; }
 .failed-panel { min-height: 270px; }
 .button:focus-visible, .nav-item:focus-visible, .icon-button:focus-visible, .user-button:focus-visible { outline: 3px solid #aaa3f3; outline-offset: 2px; }
+.worker-configured, .worker-missing { margin-left: 7px; padding: 4px 8px; border-radius: 999px; font-size: 10px; font-weight: 650; }
+.worker-configured { background: var(--success-soft); color: var(--success); }
+.worker-missing { background: var(--warning-soft); color: var(--warning); }
+.demo-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.demo-actions .demo-link { margin: 0; padding: 8px 2px; }
+.worker-warning { display: grid; gap: 4px; grid-column: 1 / -1; padding: 11px 13px; border: 1px solid #f0d597; border-radius: 8px; background: #fffaf0; color: #775315; font-size: 10px; line-height: 1.45; }
+.worker-warning strong { font-size: 10px; }
 
 @media (max-width: 1150px) {
   .demo-banner { grid-template-columns: minmax(200px, .9fr) minmax(300px, 1.1fr); }

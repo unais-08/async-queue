@@ -1,13 +1,14 @@
 {
-  "name": "AsyncQueue",
+  "name": "async-queue-service",
+  "version": "1.0.0",
+  "engines": { "node": ">=18" },
+  "private": true,
   "scripts": {
     "build": "tsc",
-    "dev": "concurrently \"npm run dev:api\" \"npm run dev:worker\"",
-    "start": "concurrently \"npm run start:api\" \"npm run start:worker\"",
+    "dev": "npm run dev:api",
+    "start": "npm run start:api",
     "dev:api": "tsx src/server.ts",
-    "dev:worker": "tsx src/worker.ts",
     "start:api": "node dist/server.js",
-    "start:worker": "node dist/worker.js",
     "db:reset": "tsx src/db/reset.db.ts"
   },
   "dependencies": {
@@ -22,7 +23,6 @@
     "@types/express": "latest",
     "@types/node": "latest",
     "@types/pg": "^8.23.1",
-    "concurrently": "latest",
     "tsx": "latest",
     "typescript": "latest"
   }

@@ -45,7 +45,7 @@ const client = axios.create({
 });
 
 export async function healthCheck() {
-  const response = await client.get<{ ok: boolean }>("/health");
+  const response = await client.get<{ ok: boolean; workerConfigured: boolean }>("/health");
   return response.data;
 }
 

@@ -1,0 +1,17 @@
+{
+  "name": "async-queue-pdf-example",
+  "private": true,
+  "scripts": {
+    "worker": "tsx src/worker.ts",
+    "submit": "tsx src/submit.ts"
+  },
+  "dependencies": {
+    "@async-queue/client": "file:../../client-sdk",
+    "dotenv": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}

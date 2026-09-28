@@ -18,8 +18,6 @@ export interface Job {
   updatedAt: Date;
 }
 
-export type JobHandler<TPayload = unknown> = (payload: TPayload) => Promise<void>;
-
 export type JobFilters = {
   status?: string;
   page: number;

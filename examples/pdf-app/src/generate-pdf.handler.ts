@@ -1,12 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { JobHandler } from '../domain/job';
-import { logger } from '../utils/logger';
+import type { JobHandler } from '@async-queue/client';
 
 type GeneratePdfPayload = { text?: string };
 
-/** Example application code: creates a small one-page PDF in the output folder. */
 export const generatePdfHandler: JobHandler<GeneratePdfPayload> = async payload => {
   if (typeof payload?.text !== 'string') {
     throw new Error('generate_pdf payload must include a text string');
@@ -30,14 +28,12 @@ export const generatePdfHandler: JobHandler<GeneratePdfPayload> = async payload 
   }
   const xrefOffset = Buffer.byteLength(pdf, 'ascii');
   pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (const offset of offsets.slice(1)) {
-    pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
-  }
+  for (const offset of offsets.slice(1)) pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
 
   const outputDirectory = path.resolve(process.env.PDF_OUTPUT_DIR ?? 'generated-pdfs');
   await mkdir(outputDirectory, { recursive: true });
   const outputPath = path.join(outputDirectory, `job-${randomUUID()}.pdf`);
   await writeFile(outputPath, pdf, 'ascii');
-  logger.info('Example PDF generated', { outputPath });
+  console.info(`[pdf-app] generated ${outputPath}`);
 };

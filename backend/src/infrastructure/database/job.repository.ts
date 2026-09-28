@@ -25,7 +25,7 @@ export async function createJob(
   return result.rows[0];
 }
 
-export async function claimNextJob() {
+export async function claimNextJob(types?: string[]) {
   const leaseToken = newLeaseToken();
 
   const result = await query<Job>(
@@ -34,6 +34,7 @@ export async function claimNextJob() {
        FROM "Job"
        WHERE status = 'QUEUED'
          AND ("nextRunAt" IS NULL OR "nextRunAt" <= NOW())
+         AND ($3::text[] IS NULL OR type = ANY($3::text[]))
        ORDER BY "createdAt" ASC
        FOR UPDATE SKIP LOCKED
        LIMIT 1
@@ -48,7 +49,7 @@ export async function claimNextJob() {
      FROM next_job
      WHERE "Job".id = next_job.id
      RETURNING "Job".*`,
-    [JOB_LEASE_SECONDS, leaseToken]
+    [JOB_LEASE_SECONDS, leaseToken, types?.length ? types : null]
   );
 
   return result.rows[0] ?? null;
